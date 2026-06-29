@@ -4,175 +4,113 @@ from openpyxl import load_workbook, Workbook
 from openpyxl.styles import Font, PatternFill
 from copy import copy
 from io import BytesIO
+import base64
 import warnings
-warnings.filterwarnings('ignore')
+warnings.filterwarnings("ignore")
 
-st.set_page_config(
-    page_title="Accurate SO Converter",
-    page_icon="📊",
-    layout="centered"
-)
+# Template Accurate sudah di-embed — tidak perlu upload 2 file
+TEMPLATE_B64 = "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"
+
+st.set_page_config(page_title="Accurate SO Converter", page_icon="📊", layout="centered")
 
 st.markdown("""
 <style>
-    .main { max-width: 720px; margin: auto; }
     .stApp { background-color: #f8f9fb; }
     .block-container { padding-top: 2rem; padding-bottom: 2rem; }
     .info-box {
-        background: #eef2ff;
-        border-left: 4px solid #4f46e5;
-        border-radius: 4px;
-        padding: 0.75rem 1rem;
-        font-size: 0.9rem;
-        color: #3730a3;
-        margin-bottom: 1rem;
+        background: #eef2ff; border-left: 4px solid #4f46e5;
+        border-radius: 4px; padding: 0.75rem 1rem;
+        font-size: 0.9rem; color: #3730a3; margin-bottom: 1rem;
     }
     .success-box {
-        background: #ecfdf5;
-        border-left: 4px solid #10b981;
-        border-radius: 4px;
-        padding: 0.75rem 1rem;
-        font-size: 0.9rem;
-        color: #065f46;
+        background: #ecfdf5; border-left: 4px solid #10b981;
+        border-radius: 4px; padding: 0.75rem 1rem;
+        font-size: 0.9rem; color: #065f46; margin-bottom: 1rem;
     }
     .stat-card {
-        background: white;
-        border: 1px solid #e5e7eb;
-        border-radius: 10px;
-        padding: 1rem;
-        text-align: center;
+        background: white; border: 1px solid #e5e7eb;
+        border-radius: 10px; padding: 1rem; text-align: center;
     }
 </style>
 """, unsafe_allow_html=True)
 
-# ── Header ──────────────────────────────────────────────────────────────────
 st.markdown("## 📊 Accurate SO Converter")
-st.markdown("Ubah data Excel transaksi menjadi format import **Sales Order Accurate** secara otomatis.")
+st.markdown("Upload satu file data transaksi → langsung download hasil import **Sales Order Accurate**.")
 st.divider()
 
-# ── Step 1: Upload Template Accurate ────────────────────────────────────────
-st.markdown("### 1 · Upload template Accurate")
+st.markdown("### Upload data transaksi")
 st.markdown(
-    '<div class="info-box">File template <code>.xlsx</code> dari Accurate '
-    '(yang punya 3 baris HEADER / ITEM / EXPENSE di atas).</div>',
+    '<div class="info-box">Kolom yang dibutuhkan: '    '<code>Tgl · No Transaksi · ID Pelanggan · Kode Produk · Qty · Satuan · Harga Satuan</code></div>',
     unsafe_allow_html=True,
 )
-template_file = st.file_uploader(
-    "Template Accurate (.xlsx)", type=["xlsx"], key="template",
-    label_visibility="collapsed"
-)
+input_file = st.file_uploader("Data transaksi (.xlsx)", type=["xlsx"], label_visibility="collapsed")
 
-# ── Step 2: Upload Data Input ────────────────────────────────────────────────
-st.markdown("### 2 · Upload data transaksi")
-st.markdown(
-    '<div class="info-box">File Excel dengan kolom: '
-    '<code>Tgl · No Transaksi · ID Pelanggan · Kode Produk · Qty · Satuan · Harga Satuan</code></div>',
-    unsafe_allow_html=True,
-)
-input_file = st.file_uploader(
-    "Data input (.xlsx)", type=["xlsx"], key="input",
-    label_visibility="collapsed"
-)
-
-# ── Preview ──────────────────────────────────────────────────────────────────
 if input_file:
     try:
         preview_df = pd.read_excel(input_file)
         input_file.seek(0)
-        preview_df.columns = [
-            'Tgl', 'No Transaksi', 'ID Pelanggan',
-            'Kode Produk', 'Qty', 'Satuan', 'Harga Satuan'
-        ]
-        st.markdown("**Preview data input:**")
+        preview_df.columns = ["Tgl","No Transaksi","ID Pelanggan","Kode Produk","Qty","Satuan","Harga Satuan"]
+        st.markdown("**Preview data:**")
         st.dataframe(preview_df.head(8), use_container_width=True, hide_index=True)
-
-        n_orders = preview_df['No Transaksi'].nunique()
-        n_items  = len(preview_df)
         c1, c2 = st.columns(2)
         with c1:
             st.markdown(
-                f'<div class="stat-card"><div style="color:#6b7280;font-size:0.8rem">Total Order</div>'
-                f'<div style="font-size:1.8rem;font-weight:700;color:#1e1b4b">{n_orders}</div></div>',
-                unsafe_allow_html=True,
-            )
+                f'<div class="stat-card"><div style="color:#6b7280;font-size:0.8rem">Total Order</div>'                f'<div style="font-size:1.8rem;font-weight:700;color:#1e1b4b">{preview_df["No Transaksi"].nunique()}</div></div>',
+                unsafe_allow_html=True)
         with c2:
             st.markdown(
-                f'<div class="stat-card"><div style="color:#6b7280;font-size:0.8rem">Total Item</div>'
-                f'<div style="font-size:1.8rem;font-weight:700;color:#1e1b4b">{n_items}</div></div>',
-                unsafe_allow_html=True,
-            )
+                f'<div class="stat-card"><div style="color:#6b7280;font-size:0.8rem">Total Item</div>'                f'<div style="font-size:1.8rem;font-weight:700;color:#1e1b4b">{len(preview_df)}</div></div>',
+                unsafe_allow_html=True)
         st.markdown("")
     except Exception as e:
-        st.error(f"Gagal membaca file input: {e}")
+        st.error(f"Gagal membaca file: {e}")
 
-# ── Convert ──────────────────────────────────────────────────────────────────
-st.markdown("### 3 · Konversi")
 
-def convert(template_bytes: bytes, input_bytes: bytes) -> bytes:
-    # Load template
-    template_wb = load_workbook(BytesIO(template_bytes))
+def convert(input_bytes):
+    template_wb = load_workbook(BytesIO(base64.b64decode(TEMPLATE_B64)))
     template_ws = template_wb.active
 
-    # Load input
     df = pd.read_excel(BytesIO(input_bytes))
-    df.columns = [
-        'Tgl', 'No Transaksi', 'ID Pelanggan',
-        'Kode Produk', 'Qty', 'Satuan', 'Harga Satuan'
-    ]
-    df['Tgl']           = pd.to_datetime(df['Tgl']).dt.strftime('%d/%m/%Y')
-    df['Qty']           = df['Qty'].astype(int)
-    df['Harga Satuan']  = df['Harga Satuan'].astype(int)
-    df['No Transaksi']  = df['No Transaksi'].astype(str)
-    df['ID Pelanggan']  = df['ID Pelanggan'].astype(str)
-    df['Kode Produk']   = df['Kode Produk'].astype(str)
+    df.columns = ["Tgl","No Transaksi","ID Pelanggan","Kode Produk","Qty","Satuan","Harga Satuan"]
+    df["Tgl"]          = pd.to_datetime(df["Tgl"]).dt.strftime("%d/%m/%Y")
+    df["Qty"]          = df["Qty"].astype(int)
+    df["Harga Satuan"] = df["Harga Satuan"].astype(int)
+    for col in ["No Transaksi","ID Pelanggan","Kode Produk"]:
+        df[col] = df[col].astype(str)
 
-    # Output workbook
     out_wb = Workbook()
     out_ws = out_wb.active
-    out_ws.title = 'Template Pesanan Penjualan'
+    out_ws.title = "Template Pesanan Penjualan"
 
-    # Copy 3 baris header dari template (dengan style)
     for row_idx in range(1, 4):
         for col_idx, cell in enumerate(template_ws[row_idx], 1):
-            new_cell = out_ws.cell(row=row_idx, column=col_idx)
-            new_cell.value = cell.value
-            if cell.font:      new_cell.font      = copy(cell.font)
-            if cell.fill:      new_cell.fill      = copy(cell.fill)
-            if cell.alignment: new_cell.alignment = copy(cell.alignment)
+            nc = out_ws.cell(row=row_idx, column=col_idx, value=cell.value)
+            if cell.font:      nc.font      = copy(cell.font)
+            if cell.fill:      nc.fill      = copy(cell.fill)
+            if cell.alignment: nc.alignment = copy(cell.alignment)
 
     for col_letter, col_dim in template_ws.column_dimensions.items():
         out_ws.column_dimensions[col_letter].width = col_dim.width
 
-    header_fill = PatternFill('solid', start_color='1F7041', end_color='1F7041')
-    header_font = Font(bold=True, color='FFFFFF')
-    item_fill   = PatternFill('solid', start_color='1F4E79', end_color='1F4E79')
-    item_font   = Font(bold=True, color='FFFFFF')
+    hdr_fill = PatternFill("solid", start_color="1F7041", end_color="1F7041")
+    hdr_font = Font(bold=True, color="FFFFFF")
+    itm_fill = PatternFill("solid", start_color="1F4E79", end_color="1F4E79")
+    itm_font = Font(bold=True, color="FFFFFF")
 
-    order_keys  = list(dict.fromkeys(df['No Transaksi'].tolist()))
+    order_keys  = list(dict.fromkeys(df["No Transaksi"].tolist()))
     current_row = 4
 
     for no_so in order_keys:
-        group = df[df['No Transaksi'] == no_so]
+        group = df[df["No Transaksi"] == no_so]
         first = group.iloc[0]
-
-        # HEADER row
-        for col_idx, val in {
-            1: 'HEADER', 2: no_so,
-            3: first['Tgl'], 4: first['ID Pelanggan']
-        }.items():
+        for col_idx, val in {1:"HEADER", 2:no_so, 3:first["Tgl"], 4:first["ID Pelanggan"]}.items():
             c = out_ws.cell(row=current_row, column=col_idx, value=val)
-            c.fill, c.font = header_fill, header_font
+            c.fill, c.font = hdr_fill, hdr_font
         current_row += 1
-
-        # ITEM rows (no EXPENSE)
         for _, item in group.iterrows():
-            for col_idx, val in {
-                1: 'ITEM',           2: item['Kode Produk'],
-                4: item['Qty'],      5: item['Satuan'],
-                6: item['Harga Satuan']
-            }.items():
+            for col_idx, val in {1:"ITEM", 2:item["Kode Produk"], 4:item["Qty"], 5:item["Satuan"], 6:item["Harga Satuan"]}.items():
                 c = out_ws.cell(row=current_row, column=col_idx, value=val)
-                c.fill, c.font = item_fill, item_font
+                c.fill, c.font = itm_fill, itm_font
             current_row += 1
 
     buf = BytesIO()
@@ -181,18 +119,16 @@ def convert(template_bytes: bytes, input_bytes: bytes) -> bytes:
     return buf.read()
 
 
-if template_file and input_file:
-    if st.button("⚡ Konversi sekarang", type="primary", use_container_width=True):
+st.markdown("---")
+if input_file:
+    if st.button("⚡ Konversi & Download", type="primary", use_container_width=True):
         with st.spinner("Memproses..."):
             try:
-                result_bytes = convert(template_file.read(), input_file.read())
-                st.markdown(
-                    '<div class="success-box">✅ Konversi berhasil! Klik tombol di bawah untuk download.</div>',
-                    unsafe_allow_html=True,
-                )
+                result = convert(input_file.read())
+                st.markdown('<div class="success-box">✅ Berhasil! Klik tombol di bawah untuk download.</div>', unsafe_allow_html=True)
                 st.download_button(
-                    label="⬇️ Download hasil (SO_Accurate_Import.xlsx)",
-                    data=result_bytes,
+                    label="⬇️ Download SO_Accurate_Import.xlsx",
+                    data=result,
                     file_name="SO_Accurate_Import.xlsx",
                     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                     use_container_width=True,
@@ -200,9 +136,8 @@ if template_file and input_file:
             except Exception as e:
                 st.error(f"Konversi gagal: {e}")
 else:
-    st.button("⚡ Konversi sekarang", disabled=True, use_container_width=True)
-    if not template_file:
-        st.caption("⬆️ Upload dulu template Accurate dan data input.")
+    st.button("⚡ Konversi & Download", disabled=True, use_container_width=True)
+    st.caption("⬆️ Upload file data transaksi dulu.")
 
 st.divider()
-st.caption("Accurate SO Converter · Tidak ada data yang dikirim ke server — semua diproses lokal.")
+st.caption("Semua proses dilakukan lokal — tidak ada data yang dikirim ke server.")
