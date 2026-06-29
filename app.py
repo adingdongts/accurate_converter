@@ -140,4 +140,6 @@ else:
     st.caption("⬆️ Upload file data transaksi dulu.")
 
 st.divider()
-st.caption("Semua proses dilakukan lokal — tidak ada data yang dikirim ke server.")
+st.caption("Semua proses dilakukan lokal, tidak ada data yang dikirim ke server.")
+st.markdown("---")
+st.markdown("<p style='text-align:center; color:#9ca3af; font-size:0.85rem;'>© 2026 Taufani Solutions. All rights reserved.</p>", unsafe_allow_html=True)
